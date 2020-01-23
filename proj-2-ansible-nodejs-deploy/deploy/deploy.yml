@@ -1,0 +1,51 @@
+---
+- hosts: ansibletest1
+
+  vars:
+    project_path: /var/www/canon-osmx
+    source_location: /home/ubuntu/canon-omsx/
+
+  gather_facts: false
+  max_fail_percentage: 0
+
+  tasks:
+    - action: ping
+
+    - name: set variables
+      set_fact:
+        release_path: "{{ project_path }}/release/{{ lookup('pipe','date +%Y%m%d%H%M%S') }}"
+        current_path: "{{ project_path }}/current"
+
+    - name: Retrieve current release folder
+      command: readlink -f current
+      register: current_release_path
+      ignore_errors: yes
+      args:
+        chdir: "{{ project_path }}"
+      become: yes
+
+    - name: Create a new directory
+      file:
+        dest={{ release_path }}
+        mode=0755
+        recurse=yes
+        state=directory
+      become: yes
+
+    - name: copy the code
+      copy:
+        src: "{{ source_location }}"
+        dest: "{{ release_path }}"
+      become: yes
+
+    - name: update npm
+      npm:
+        path={{ release_path }}/canon-omsx
+      become: yes
+
+    - name: Update Symlink
+      file:
+        src={{ release_path }}
+        dest={{ current_path }}
+        state=link
+      become: yes

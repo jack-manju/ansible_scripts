@@ -1,0 +1,2 @@
+[ansibletest1]
+172.27.65.48    ansible_user=ubuntu
