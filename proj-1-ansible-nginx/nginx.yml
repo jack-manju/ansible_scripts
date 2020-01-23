@@ -1,0 +1,55 @@
+---
+- hosts: ansibletest1
+  become: true
+
+  tasks:
+    - name: ensure nginx
+      apt: name=nginx state=latest
+      become: yes
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: copy the nginx configuration
+      copy:
+        src: static_site.cfg
+        dest: /etc/nginx/sites-available/static_site.cfg
+      become: yes
+
+    - name: create symlink
+      file:
+        src:  /etc/nginx/sites-available/static_site.cfg
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+      become: yes
+
+    - name: copy static website content
+      copy:
+        src: static-site/
+        dest: /var/www/static-site
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+      become: yes  
+
+    - name: Test uri module
+      uri:
+            url: "http://172.27.65.48:80/"
+            return_content: yes
+            status_code: 200
+            validate_certs: no
+            register: result
+      tags:
+        - test_uri
+
+#    - name: stop nginx
+#      service:
+#          name: nginx
+#          state: stopped
+
+#    - name: remove nginx
+#      apt: name=nginx state=absent
